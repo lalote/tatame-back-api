@@ -3,88 +3,76 @@
 require 'nokogiri'
 require 'open-uri'
 
-HEROES_URL = 'https://www.bjjheroes.com/a-z-bjj-fighters-list'.freeze
+HEROES_URL = 'https://www.bjjheroes.com/a-z-bjj-fighters-list'
 HEROES_BASE_URL = 'https://www.bjjheroes.com'
 
 
 namespace :import do
+  
   task heroes: :environment do
-    data = Nokogiri::HTML(open(HEROES_URL))
-    table = data.at('#tablepress-8')
+     
+    begin
+        data = Nokogiri::HTML(open(HEROES_URL))
 
-    nro = 1
-    datos = Array.new
+        table = data.at('#tablepress-8')   
 
-    table.search('tr').each do |tr|
-      
-      cells = tr.search('td')
+        nro = 1
+        table.search('tbody/tr').each do |tr|        
+          datos = Array.new
+          cells = tr.search('td')     
 
-      
-
-      for i in 0..3
-        unless cells[i].nil? || cells[i] == 0
-          datos[i] = cells[i].text.strip          
-          else 
-            datos[i] = ''
+          for i in 0..3
+            unless cells[i].nil? || cells[i] == 0
+              datos[i] = cells[i].text.strip          
+            else 
+              datos[i] = ''
+            end
           end
+
+          #ID del luchador para ingresar a su perfil
+          id_fighter = ''
+
+          unless cells[i].nil? || cells[i] == 0
+            id_fighter = cells[0].search('a').attr('href')
+          end
+
+          puts HEROES_BASE_URL + id_fighter
+
+          # AHORA SE BUSCA LA IMAGEN EN EL PERFIL DE EL LUCHADOR
+          url = ''
+          
+          #datos de el perfil
+          data_perfil = Nokogiri::HTML(open(HEROES_BASE_URL + id_fighter))
+
+          #background imagen css
+          style_background_imagen = data_perfil.xpath(".//*[@class='cover']/@style")      
+
+          #clean url (se agrega a url "-514x276.jpg") para thumbs
+          unless style_background_imagen.nil? || style_background_imagen.length == 0
+            url = style_background_imagen.to_s.split("background-image: url(").last.split(");").first
+          end        
+
+          puts "url " + url
+          puts '[ Nro : '+ nro.to_s + ' ]  Nombre : ' + datos[0].to_s + ' ' + datos[1].to_s + ' - Alias : '  +datos[2].to_s + '  ' + ' - Team : ' + datos[3].to_s
+          puts "creando entrada en BD "
+
+          fighter = create_fighter(datos[0], datos[1],datos[2],datos[3],url)
+
+          puts '-----------------'
+          nro = nro + 1
+        end
+      rescue OpenURI::HTTPError => e
+        if e.message == '404 Not Found'
+          # handle 404 error
+        else
+          raise e
+        end
       end
-
-      id_fighter = ''
-
-      unless cells[i].nil? || cells[i] == 0
-        id_fighter = cells[0].search('a').attr('href')
-
-      end
-
-      URL_PERFIL = HEROES_BASE_URL + id_fighter
-
-      puts URL_PERFIL
-
-      # AHORA SE BUSCA LA IMAGEN EN EL PERFIL DE EL LUCHADOR
-
-      data_perfil = Nokogiri::HTML(open(URL_PERFIL))
-      #alt_tags = data_perfil.css('img')
-      alt_tags = doc.xpath("//div/a/h4").collect {|node| node.text.strip}
-
-      puts alt_tags
-
-      puts '[ Nro : '+ nro.to_s + ' ]  Nombre : ' + datos[0].to_s + ' ' + datos[1].to_s + ' - Alias : '  +datos[2].to_s + '  ' + ' - Team : ' + datos[3].to_s
-
-
-      puts '-----------------'
-
-
-    end
-
-   # puts table
-
-    #rows = data.css("td[valign='top'] table tr") # All the <tr>this is a line</tr>
-
-    #puts rows
-
-    #rows.each do |row|
-      #puts row.text # Will print all the 'this is a line'
-    #end
-
-    #puts doc
-
-   # books = doc.xpath('//*[@itemtype="http://schema.org/Book"]')
-
-    #books.each { |book| book_from_xml(book) }
   end
 
-  def book_from_xml(book)
-    title, author_name = book.xpath('.//*[@itemprop="name"]').map(&:content)
-    author = Author.find_or_create_by(name: author_name)
-
-    book = create_book(author, title)
-
-    puts "#{book.author} - #{book} for #{book.price}"
-  end
-
-  def create_fighter(fname,lname,falias,fteam)
-    #fighter = Fighter.find_or_create_by(:first_name:fname,:last_name:lname)    
-    #fighter.save
-    #fighter
-  end
-end
+  def create_fighter(fname,lname,falias,fteam,url)
+    fighter = Fighter.find_or_create_by(:first_name => fname, :last_name => lname, :alias =>falias, :team => fteam, :url_photo =>url)    
+    fighter.save
+    fighter
+  end  
+end 
