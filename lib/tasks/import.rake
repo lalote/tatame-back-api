@@ -11,7 +11,7 @@ namespace :import do
   
   task heroes: :environment do
      
-    begin
+    
         data = Nokogiri::HTML(open(HEROES_URL))
 
         table = data.at('#tablepress-8')   
@@ -40,7 +40,7 @@ namespace :import do
 
           # AHORA SE BUSCA LA IMAGEN EN EL PERFIL DE EL LUCHADOR
           url = ''
-          
+         begin 
           #datos de el perfil
           data_perfil = Nokogiri::HTML(open(HEROES_BASE_URL + id_fighter))
 
@@ -50,28 +50,39 @@ namespace :import do
           #clean url (se agrega a url "-514x276.jpg") para thumbs
           unless style_background_imagen.nil? || style_background_imagen.length == 0
             url = style_background_imagen.to_s.split("background-image: url(").last.split(");").first
-          end        
+          end   
+
+        rescue OpenURI::HTTPError => e
+          if e.message == '404 Not Found'
+            # handle 404 error
+          else
+            raise e
+          end
+        end          
+          
+          paragraph = ''
+          #se busca el resumen de el luchador, el primer <p> de  la clase text-content
+          data_perfil.xpath(".//*[@class='text-content']/p").each do |p|
+            paragraph = p.text.strip
+            break
+          end
+
+          puts paragraph
 
           puts "url " + url
           puts '[ Nro : '+ nro.to_s + ' ]  Nombre : ' + datos[0].to_s + ' ' + datos[1].to_s + ' - Alias : '  +datos[2].to_s + '  ' + ' - Team : ' + datos[3].to_s
           puts "creando entrada en BD "
 
-          fighter = create_fighter(datos[0], datos[1],datos[2],datos[3],url)
+          fighter = create_fighter(datos[0], datos[1],datos[2],datos[3],url,paragraph)
 
           puts '-----------------'
           nro = nro + 1
         end
-      rescue OpenURI::HTTPError => e
-        if e.message == '404 Not Found'
-          # handle 404 error
-        else
-          raise e
-        end
-      end
+
   end
 
-  def create_fighter(fname,lname,falias,fteam,url)
-    fighter = Fighter.find_or_create_by(:first_name => fname, :last_name => lname, :alias =>falias, :team => fteam, :url_photo =>url)    
+  def create_fighter(fname,lname,falias,fteam,url,fresumen)
+    fighter = Fighter.find_or_create_by(:first_name => fname, :last_name => lname, :alias =>falias, :team => fteam, :url_photo =>url, :resumen => fresumen)    
     fighter.save
     fighter
   end  
