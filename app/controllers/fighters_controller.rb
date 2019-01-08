@@ -3,7 +3,7 @@ class FightersController < ApplicationController
 
   # GET /fighters
   def index
-    @fighters = Fighter.all
+    @fighters = Fighter.limit(20)
 
     render json: @fighters
   end

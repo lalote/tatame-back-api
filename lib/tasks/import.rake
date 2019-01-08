@@ -52,13 +52,11 @@ namespace :import do
             url = style_background_imagen.to_s.split("background-image: url(").last.split(");").first
           end   
 
-        rescue OpenURI::HTTPError => e
-          if e.message == '404 Not Found'
-            # handle 404 error
-          else
-            raise e
-          end
-        end          
+
+          puts "url " + url
+          puts '[ Nro : '+ nro.to_s + ' ]  Nombre : ' + datos[0].to_s + ' ' + datos[1].to_s + ' - Alias : '  +datos[2].to_s + '  ' + ' - Team : ' + datos[3].to_s          
+
+       
           
           paragraph = ''
           #se busca el resumen de el luchador, el primer <p> de  la clase text-content
@@ -67,10 +65,16 @@ namespace :import do
             break
           end
 
+        rescue OpenURI::HTTPError => e
+          if e.message == '404 Not Found'
+            puts '404 error'
+          else
+            raise e
+          end
+        end             
+
           puts paragraph
 
-          puts "url " + url
-          puts '[ Nro : '+ nro.to_s + ' ]  Nombre : ' + datos[0].to_s + ' ' + datos[1].to_s + ' - Alias : '  +datos[2].to_s + '  ' + ' - Team : ' + datos[3].to_s
           puts "creando entrada en BD "
 
           fighter = create_fighter(datos[0], datos[1],datos[2],datos[3],url,paragraph)
