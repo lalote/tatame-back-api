@@ -41,3 +41,15 @@ end
 
 # Windows does not include zoneinfo files, so bundle the tzinfo-data gem
 gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+
+#gem "mobility"
+#gem 'kaminari'
+#gem "comfortable_mexican_sofa", "~> 2.0.0"
+gem 'activeadmin'
+
+# Plus integrations with:
+gem 'devise'
+gem 'sass-rails', '~> 5.0'
+gem 'active_skin'
+gem "pry-rails", group:"development"
+gem 'activeadmin_addons'

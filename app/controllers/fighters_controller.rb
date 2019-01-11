@@ -1,4 +1,4 @@
-class FightersController < ApplicationController
+class FightersController < ApiController
   before_action :set_fighter, only: [:show, :update, :destroy]
 
   # GET /fighters
