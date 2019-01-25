@@ -46,6 +46,6 @@ class FightersController < ApiController
 
     # Only allow a trusted parameter "white list" through.
     def fighter_params
-      params.require(:fighter).permit(:first_name, :last_name, :alias, :team, :url_photo)
+      params.require(:fighter).permit(:first_name, :last_name, :alias, :team, :url_photo,:firstN)
     end
 end
